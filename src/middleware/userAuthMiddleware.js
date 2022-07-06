@@ -8,6 +8,8 @@ const authentication = async function (req, res, next) {
         // check if token key is present in the header/cookies
         let token = req.headers["x-Api-key"];
         if (!token) token = req.headers["x-api-key"]; //convert key to small case because it will only accept smallcase
+        return res.status(400).send({ status: false, msg: "Token is Missing" });
+        
 
         // Checking if the token is creted using the secret key provided and decode it.
         let decodedToken = jwt.verify(token, "group30-radon");
