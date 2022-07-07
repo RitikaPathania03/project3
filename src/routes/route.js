@@ -12,7 +12,9 @@ router.post("/login", userController.userLogin)
 
 router.post("/books" , middleware.authentication  , middleware.authorisation, bookController.createBook)
 
-//router.get("/books",middleware.authentication, bookController.getBooks)
+router.get("/books",middleware.authentication, bookController.getBooks)
+
+router.get("/books/:bookId",middleware.authentication, bookController.getBooksById)
 
 
 

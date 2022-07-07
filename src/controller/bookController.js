@@ -1,5 +1,6 @@
 const bookModel = require("../model/bookModel")
 const userModel = require("../model/userModel")
+const reviewModel = require("../model/reviewModel")
 const ObjectId = require('mongoose').Types.ObjectId
 const moment = require('moment')
 
@@ -70,6 +71,81 @@ const createBook = async function(req,res){
         res.status(500).send({msg:"Serverside Errors. Please try again later", error: err.message})
     }
 }
+
+
+let getBooks = async function(req,res){
+
+    try {
+        // stored all the data from query params in a variable
+        let filterData=req.query
+        let{userId, category, subcategory,...rest}=filterData
+
+        //check param is empty or not
+        if(!Object.keys(filterData).length) return res.status(400).send({status:false, message:"provide some data in param"})
+
+        //check if any unwanted keys is present or not
+       if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
+
+ 
+        //check if authorId key is enterd in filter and if its is a valid objectid
+        if (("userId" in filterData) && (!ObjectId.isValid(userId))) {
+            return res.status(400).send({ status: false, msg: "Bad Request. UserId invalid" })
+        }
+        //filterData.isDeleted = false
+        //check user is present or not in DB
+        let user = await userModel.findById(userId)
+        if(!user) return res.status(400).send({ status: false, msg: "User not present in DB" })
+
+        // finding the blog through the enterd condition and newly updated condition
+        let savedBlogs = await bookModel.find({filterData,isDeleted:false}).select({_id:1, title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1}) //find return array of object
+        // check if condition entered in the postman/filter doesnot match any document
+        if (savedBlogs.length == 0) {
+        return res.status(404).send({ status: false, msg: "Resource Not found. Please try another filter" })
+        } 
+        // if data found in DB
+        return res.status(200).send({ status: true,status:'Books list', data: savedBlogs })
+        
+        }
+        catch (err) {
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+
+        }
+
+}
+let getBooksById=async function(req,res){
+    try{
+    let bookId=req.params.bookId
+    bookId.isDeleted=false
+    //check bookId is valid or not
+    if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
+    //check bookId is present or not in DB
+    let checkBook=await bookModel.findById(bookId)
+    if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
+    //Check reviews
+    let reviewsData=await reviewModel.find({_id:bookId,isDeleted:false})
+    // destructure
+    let { _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted}=checkBook
+    //fetch tha data
+    let data={ _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted, reviewsData}
+    return res.status(200).send({status:true,message:"Books list", data:data})
+    }
+    catch(error){
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+
+    }
+}
  
 
+
 module.exports.createBook = createBook
+module.exports.getBooks = getBooks
+module.exports.getBooksById = getBooksById
+
+
+
+
+
+
+
+
+
