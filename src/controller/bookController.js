@@ -71,47 +71,5 @@ const createBook = async function(req,res){
     }
 }
  
-const getBooks=async function(req,res){
-    try{
-    let filterData=req.query
-    let{userId, category, subcategory,...rest}=filterData
-
-    //check param is empty or not
-    if(!Objec.keys(filterData).length) return res.status(400).send({status:false, message:"provide some data in param"})
-
-    //check if any unwanted keys is present or not
-    if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
-
-    //check if any quer parm is present ?
-    if (Object.keys(filterData).length !== 0) {
-
-        //check if id inquery is valid or not
-        if(!ObjectId.isValid(userId)){
-            return res.status(400).send({status:false,msg:"invalid userId in query params"})
-        }
-
-        //add the keyisDeleted &isPublished in req.query
-        req.query.isDeleted = false
-
-        //find data as per req.query para filter ?
-        let data = await bookModel.find(filterData)
-
-        //check if data is found or not ?
-        if (data.length != 0) return res.status(200).send({ status: true, data: data })
-        return res.status(404).send({ status: false, msg: "No Document Found as per filter key " })
-    }
-
-    //get ta data as per query filter
-    let data=await bookModel.find({isDeleted:false}).select({book_id:1,title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1})
-    //check any data is present or not 
-    if(data.length==0)return res.status(404).send({status:false,message:"no such data is found as per the query filter"})
-    //return data 
-    return res.status(200).send({statu:true,message:success,data:data})
-    }
-    catch(error){
-        res.status(500).send({msg:"Serverside Errors. Please try again later", error: error.message})
-      }
-}
 
 module.exports.createBook = createBook
-module.exports.getBooks = getBooks

@@ -10,9 +10,9 @@ router.post("/register", userController.userRegistartion)
 
 router.post("/login", userController.userLogin)
 
-router.post("/books" , middleware.authentication , middleware.authorisation, bookController.createBook)
+router.post("/books" , middleware.authentication  , middleware.authorisation, bookController.createBook)
 
-router.get("/books",middleware.authentication, bookController.getBooks)
+//router.get("/books",middleware.authentication, bookController.getBooks)
 
 
 
