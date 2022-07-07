@@ -111,12 +111,32 @@ let getBooks = async function(req,res){
         }
 
 }
+
+const updateBooks = async function (req, res) {
+    try {
+            // Stores the blog id data recieved in params in to a new variable
+            let enteredBookId = req.params.bookId
+
+            let updateData = await bookModel.findByIdAndUpdate(enteredBookId, {
+                title: req.body.title, body: req.body.body,
+                excerpt: req.body.excerpt,
+                releasedAt : req.body.releasedAt,
+                ISBN: req.body.ISBN
+            }, { new: true })
+            return res.status(200).send({ status: true, data: updateData })
+        
+    }
+     catch (err) {
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+
+    }
+}
  
 
 
 module.exports.createBook = createBook
 module.exports.getBooks = getBooks
-
+module.exports.updateBooks = updateBooks
 
 
 
