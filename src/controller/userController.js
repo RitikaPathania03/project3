@@ -89,5 +89,8 @@ const userLogin=async function(req,res){
     }
 }
 
+
+
+
 module.exports. userRegistartion= userRegistartion
 module.exports.userLogin=userLogin;

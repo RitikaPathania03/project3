@@ -2,6 +2,7 @@ const bookModel = require("../model/bookModel")
 const userModel = require("../model/userModel")
 const ObjectId = require('mongoose').Types.ObjectId
 const moment = require('moment')
+const reviewModel = require("../model/reviewModel")
 
 const isValid = function (value) {
     if ( value === "undefined" || value === null) return false
@@ -54,5 +55,63 @@ const createBook = async function(req,res){
     }
 }
 
+// const getBook=async function(req,res){
+//     try{
+//     let bookId=req.params;
+   
+//     let bookData=await bookModel.findOne({_id:bookId,isDeleted:false})
+//     let checkReviews=(!bookData.reviews==0)
+//     let emptyArr=[]
+//     if(checkReviews){ res.send({status:true,msg:"books list",data:bookData{reviewData:emptyArr}})
+                                                                 
 
-module.exports.createBook = createBook
+//     const allReviews=await reviewModel.find({bookId: bookData._id, isDeleted:false}).select({
+//         bookId:1,
+//         reviewedBy:1,
+//         reviewedAt:1,
+//         rating:1,
+//         review:1
+//     })
+     
+    
+
+    
+    
+    
+// }}catch(err){res.status(500).send({msg:"error",error:err.message});}}
+
+
+//=====================update books===========================================================================================================
+const updateBook=async function(req,res){
+    try{
+    let bookId=req.params;
+    if(!bookId){res.status(400).send({status:false,msg:"enter userId"})}
+    let data=req.body;
+    if(Object.keys(data).length == 0){res.status(400).send({ msg: 'request body cant be empty' })}
+    let newKeys=data.title||data.excerpt||data.releasedAt||data.ISBN;
+    if(!newKeys){res.status(400).send({status:false,msg:"you can only update title,excerpt,releasedAt or ISBN"})}
+ 
+    let checkBook= await bookModel.findOne({_id:bookId,isDeleted:false})
+    if(!checkBook){res.status(401).send({status:false,msg:"No such book exists"})}
+    if (data.title){if(typeof data.title !== 'string') { res.status(400).send({ msg: 'title should be string type' }) }; 
+    checkBook.title = data.title};
+    if(data.excerpt){if(typeof data.excerpt !== 'string') { res.status(400).send({ msg: 'excerpt should be string type' }) }; 
+    checkBook.excerpt=data.excerpt};
+    if(data.releasedAt)checkBook.releasedAt=data.releasedAt;
+    if(data.ISBN)checkBook.ISBN=data.ISBN;
+
+  
+    let updatedData=await bookModel.findOneAndUpdate({_id:bookId},checkBook,{new:true});
+    return res.status(200).send({status:True,msg:"Success",data:updatedData})
+    }catch(err){res.status(500).send({msg:"error",error:err.message});
+}}
+
+    
+    
+    
+    
+    
+ 
+
+module.exports.createBook = createBook;
+module.exports.updateBook=updateBook;

@@ -12,9 +12,9 @@ router.post("/login", userController.userLogin)
 
 router.post("/books" , authenticationMW.authentication , authorisationMW.authorisation, bookController.createBook)
 
+router.get("/books/:bookId", authenticationMW.authorisation, bookController.getBook)
 
-
-
+router.put("/books/:bookId", authenticationMW.authentication,authorisationMW, bookController.updateBook)
 
 
 module.exports=router;
