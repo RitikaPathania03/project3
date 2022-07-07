@@ -6,6 +6,7 @@ const authenticationMW = require("../middleware/userAuthMiddleware")
 const authorisationMW = require("../middleware/userAuthMiddleware")
 
 
+router.post("/register", userController.userRegistartion)
 
 router.post("/login", userController.userLogin)
 

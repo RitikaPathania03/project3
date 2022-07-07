@@ -39,7 +39,7 @@ const authorisation = async function(req,res,next){
         if (!decodedToken)
             return res.status(401).send({ status: false, msg: "Authentication Missing. Login is required. Token is invalid" });
 
-        // execute if req.body will contain authorID (When new Blog is Created)
+        // execute if req.body will contain authorID (When new Book is Created)
         if (req.body.userId) {
             console.log(req.body.userId)
             if (decodedToken.userId != (req.body.userId)) {

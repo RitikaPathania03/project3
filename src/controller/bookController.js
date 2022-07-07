@@ -38,13 +38,13 @@ const createBook = async function(req,res){
 
         let checkIfUserIsPresent = await userModel.findOne({_id:reqBody.userId})
         
-        if(!checkIfUserIsPresent)return res.status(400).send({status: false, message:"This user doesnt exist in the Database"})
+        if(!checkIfUserIsPresent)return res.status(404).send({status: false, message:"This user doesnt exist in the Database"})
 
         if(!isValid(reqBody.category)) return res.status(400).send({status: false, message: "Please Enter category"})
 
         if(!isValid(reqBody.subCategory)) return res.status(400).send({status: false, message: "Please Enter subcategory"})
 
-        let releasedAt = moment().format('YYYY-MM-DD h:mm:ss')
+        let releasedAt = moment().format('YYYY-MM-DD ')
         releasedAt.reqBody = req.body
         let savedData = await bookModel.create(reqBody)
         res.status(201).send({status:true, message:"Success", data : savedData})
