@@ -10,11 +10,12 @@ router.post("/register", userController.userRegistartion)
 
 router.post("/login", userController.userLogin)
 
-router.post("/books" , middleware.authentication , middleware.authorisation, bookController.createBook)
+router.post("/books" , middleware.authentication  , middleware.authorisation, bookController.createBook)
 
 router.get("/books",middleware.authentication, bookController.getBooks)
 
 router.put("/books/:bookId", bookController.updateBooks)
+router.get("/books/:bookId",middleware.authentication, bookController.getBooksById)
 
 
 

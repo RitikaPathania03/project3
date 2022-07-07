@@ -1,5 +1,6 @@
 const bookModel = require("../model/bookModel")
 const userModel = require("../model/userModel")
+const reviewModel = require("../model/reviewModel")
 const ObjectId = require('mongoose').Types.ObjectId
 const moment = require('moment')
 
@@ -90,19 +91,19 @@ let getBooks = async function(req,res){
         if (("userId" in filterData) && (!ObjectId.isValid(userId))) {
             return res.status(400).send({ status: false, msg: "Bad Request. UserId invalid" })
         }
-        filterData.isDeleted = false
-        
+        //filterData.isDeleted = false
+        //check user is present or not in DB
         let user = await userModel.findById(userId)
         if(!user) return res.status(400).send({ status: false, msg: "User not present in DB" })
 
         // finding the blog through the enterd condition and newly updated condition
-        let savedBlogs = await bookModel.find(filterData).select({_id:1, title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1}) //find return array of object
+        let savedBlogs = await bookModel.find({filterData,isDeleted:false}).select({_id:1, title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1}) //find return array of object
         // check if condition entered in the postman/filter doesnot match any document
         if (savedBlogs.length == 0) {
         return res.status(404).send({ status: false, msg: "Resource Not found. Please try another filter" })
         } 
         // if data found in DB
-        return res.status(200).send({ status: true, data: savedBlogs })
+        return res.status(200).send({ status: true,status:'Books list', data: savedBlogs })
         
         }
         catch (err) {
@@ -128,18 +129,56 @@ const updateBooks = async function (req, res) {
     }
      catch (err) {
         return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
-
+     }
     }
-}
+// let getBooksById=async function(req,res){
+//     try{
+//     let bookId=req.params.bookId
+//     bookId.isDeleted=false
+//     //check bookId is valid or not
+//     if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
+//     //check bookId is present or not in DB
+//     let checkBook=await bookModel.findById(bookId)
+//     if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
+//     //Check reviews
+//     let reviewsData=await reviewModel.find({_id:bookId,isDeleted:false})
+//     // destructure
+//     let { _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted}=checkBook
+//     //fetch tha data
+//     let data={ _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted, reviewsData}
+//     return res.status(200).send({status:true,message:"Books list", data:data})
+//     }
+//     catch(error){
+//         return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+
+//     }
+// }
  
 
 
 module.exports.createBook = createBook
 module.exports.getBooks = getBooks
 module.exports.updateBooks = updateBooks
+// module.exports.getBooksById = getBooksById
 
 
 
+//const updateBooks = async function (req, res) {
+//     try {
+//         // Stores the blog id data recieved in params in to a new variable
+//         let enteredBookId = req.params.bookId
+
+//         let updateData = await bookModel.findByIdAndUpdate(enteredBookId, {
+//             title: req.body.title, body: req.body.body,
+//             excerpt: req.body.excerpt,
+//             releasedAt : req.body.releasedAt,
+//             ISBN: req.body.ISBN
+//         }, { new: true })
+//         return res.status(200).send({ status: true, data: updateData })
+    
+// }
+//  catch (err) {
+//     return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
 
 
 
