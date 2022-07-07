@@ -48,7 +48,13 @@ const bookSchema=new mongoose.Schema({
     releasedAt:{
         type:Date,
         default : Date.now   ///^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/
-    },
+    },    
 }, { timestamps: true });
 
 module.exports = mongoose.model('Book', bookSchema)
+
+//require moment karake and then use      
+//  releasedAt: { type: moment(new Date()).format("YYYY-MM-DD"), required: true, default: null }
+
+
+//releasedAt:moment(releasedAt).toISOString()

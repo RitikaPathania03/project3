@@ -26,7 +26,7 @@ const userLogin=async function(req,res){
     "group30-radon"
     );
     res.setHeader("x-api-key", token);
-    res.send({ status: true, msg:"Success", data:{ token }});
+    res.send({ status: true, msg:"Success", data: token });
     }catch (err){res.status(500).send({msg:"error",error:err.message});
     }
 }

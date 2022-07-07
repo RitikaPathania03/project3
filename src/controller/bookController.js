@@ -24,17 +24,34 @@ const createBook = async function(req,res){
     
         if(!isValid(reqBody.excerpt)) return res.status(400).send({status: false, message: "Please Enter excerpt"})
 
+        if (!reqBody.userId) return res.status(400).send({ status: false, message: "Please Enter UserId" })
+
+        if((reqBody.userId.trim().length == 0)){
+            return res.status(400).send({ status: false, msg: "Bad Request. User Id cannot be empty"})
+        }
+
+        if(!ObjectId.isValid(userId)){
+            return res.status(400).send({ status: false, msg: "UserId invalid" })
+        }
+
         if(!isValid(reqBody.ISBN)) return res.status(400).send({status: false, message: "Please Enter ISBN"})
+
 
         if((reqBody.ISBN.trim().length) < 13){
          return res.status(400).send({ status: false, msg: "Bad Request. Please enter Valid ISBN"})
         }
 
-        if(!isValid(reqBody.userId)) return res.status(400).send({status: false, message: "Please Enter UserId"})
+        let checkIfISBNIsPresent = await bookModel.findOne({ISBN:reqBody.ISBN})
+        
+        if(checkIfISBNIsPresent)return res.status(400).send({status: false, message:"This ISBN already exist"})
 
-        if(!ObjectId.isValid(userId)){
-            return res.status(400).send({ status: false, msg: "UserId invalid" })
-        } 
+        if (!reqBody.reviews) return res.status(400).send({ status: false, message: "Please Enter Reviews" })
+
+        if (!reqBody.subCategory) return res.status(400).send({ status: false, message: "Please Enter Subcategory" })
+
+        if(("subCategory" in reqBody) && (reqBody.subCategory.length == 0)){
+            return res.status(400).send({ status: false, msg: "Bad Request. Subcategory cannot be empty"})
+        }
 
         let checkIfUserIsPresent = await userModel.findOne({_id:reqBody.userId})
         
@@ -42,10 +59,9 @@ const createBook = async function(req,res){
 
         if(!isValid(reqBody.category)) return res.status(400).send({status: false, message: "Please Enter category"})
 
-        if(!isValid(reqBody.subCategory)) return res.status(400).send({status: false, message: "Please Enter subcategory"})
-
-        let releasedAt = moment().format('YYYY-MM-DD h:mm:ss')
-        releasedAt.reqBody = req.body
+        let releasedAt = reqBody.releasedAt
+        releasedAt = moment(releasedAt).toISOString()
+       
         let savedData = await bookModel.create(reqBody)
         res.status(201).send({status:true, message:"Success", data : savedData})
     }
