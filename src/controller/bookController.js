@@ -1,5 +1,6 @@
 const bookModel = require("../model/bookModel")
 const userModel = require("../model/userModel")
+
 const ObjectId = require('mongoose').Types.ObjectId
 const moment = require('moment')
 const reviewModel = require("../model/reviewModel")
@@ -25,17 +26,34 @@ const createBook = async function(req,res){
     
         if(!isValid(reqBody.excerpt)) return res.status(400).send({status: false, message: "Please Enter excerpt"})
 
+        if (!reqBody.userId) return res.status(400).send({ status: false, message: "Please Enter UserId" })
+
+        if((reqBody.userId.trim().length == 0)){
+            return res.status(400).send({ status: false, msg: "Bad Request. User Id cannot be empty"})
+        }
+
+        if(!ObjectId.isValid(userId)){
+            return res.status(400).send({ status: false, msg: "UserId invalid" })
+        }
+
         if(!isValid(reqBody.ISBN)) return res.status(400).send({status: false, message: "Please Enter ISBN"})
+
 
         if((reqBody.ISBN.trim().length) < 13){
          return res.status(400).send({ status: false, msg: "Bad Request. Please enter Valid ISBN"})
         }
 
-        if(!isValid(reqBody.userId)) return res.status(400).send({status: false, message: "Please Enter UserId"})
+        let checkIfISBNIsPresent = await bookModel.findOne({ISBN:reqBody.ISBN})
+        
+        if(checkIfISBNIsPresent)return res.status(400).send({status: false, message:"This ISBN already exist"})
 
-        if(!ObjectId.isValid(userId)){
-            return res.status(400).send({ status: false, msg: "UserId invalid" })
-        } 
+        if (!reqBody.reviews) return res.status(400).send({ status: false, message: "Please Enter Reviews" })
+
+        if (!reqBody.subCategory) return res.status(400).send({ status: false, message: "Please Enter Subcategory" })
+
+        if(("subCategory" in reqBody) && (reqBody.subCategory.length == 0)){
+            return res.status(400).send({ status: false, msg: "Bad Request. Subcategory cannot be empty"})
+        }
 
         let checkIfUserIsPresent = await userModel.findOne({_id:reqBody.userId})
         
@@ -55,63 +73,100 @@ const createBook = async function(req,res){
     }
 }
 
-// const getBook=async function(req,res){
-//     try{
-//     let bookId=req.params;
-   
-//     let bookData=await bookModel.findOne({_id:bookId,isDeleted:false})
-//     let checkReviews=(!bookData.reviews==0)
-//     let emptyArr=[]
-//     if(checkReviews){ res.send({status:true,msg:"books list",data:bookData{reviewData:emptyArr}})
-                                                                 
+                                      
 
-//     const allReviews=await reviewModel.find({bookId: bookData._id, isDeleted:false}).select({
-//         bookId:1,
-//         reviewedBy:1,
-//         reviewedAt:1,
-//         rating:1,
-//         review:1
-//     })
-     
-    
+let getBooks = async function(req,res){
 
-    
-    
-    
-// }}catch(err){res.status(500).send({msg:"error",error:err.message});}}
+    try {
+        // stored all the data from query params in a variable
+        let filterData=req.query
+        let{userId, category, subcategory,...rest}=filterData
 
+        //check param is empty or not
+        //if(!Object.keys(filterData).length) return res.status(400).send({status:false, message:"provide some data in param"})
 
-//=====================update books===========================================================================================================
-const updateBook=async function(req,res){
-    try{
-    let bookId=req.params;
-    if(!bookId){res.status(400).send({status:false,msg:"enter userId"})}
-    let data=req.body;
-    if(Object.keys(data).length == 0){res.status(400).send({ msg: 'request body cant be empty' })}
-    let newKeys=data.title||data.excerpt||data.releasedAt||data.ISBN;
-    if(!newKeys){res.status(400).send({status:false,msg:"you can only update title,excerpt,releasedAt or ISBN"})}
+        //check if any unwanted keys is present or not
+       if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
+
  
-    let checkBook= await bookModel.findOne({_id:bookId,isDeleted:false})
-    if(!checkBook){res.status(401).send({status:false,msg:"No such book exists"})}
-    if (data.title){if(typeof data.title !== 'string') { res.status(400).send({ msg: 'title should be string type' }) }; 
-    checkBook.title = data.title};
-    if(data.excerpt){if(typeof data.excerpt !== 'string') { res.status(400).send({ msg: 'excerpt should be string type' }) }; 
-    checkBook.excerpt=data.excerpt};
-    if(data.releasedAt)checkBook.releasedAt=data.releasedAt;
-    if(data.ISBN)checkBook.ISBN=data.ISBN;
+        //check if authorId key is enterd in filter and if its is a valid objectid
+        if (("userId" in filterData) && (!ObjectId.isValid(userId))) {
+            return res.status(400).send({ status: false, msg: "Bad Request. UserId invalid" })
+        }
+        //filterData.isDeleted = false
+        //check user is present or not in DB
+        let user = await userModel.findById(userId)
+        if(!user) return res.status(400).send({ status: false, msg: "User not present in DB" })
 
-  
-    let updatedData=await bookModel.findOneAndUpdate({_id:bookId},checkBook,{new:true});
-    return res.status(200).send({status:True,msg:"Success",data:updatedData})
-    }catch(err){res.status(500).send({msg:"error",error:err.message});
-}}
+        // finding the blog through the enterd condition and newly updated condition
+        let savedBlogs = await bookModel.find({filterData,isDeleted:false}).select({_id:1, title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1}) //find return array of object
+        // check if condition entered in the postman/filter doesnot match any document
+        if (savedBlogs.length == 0) {
+        return res.status(404).send({ status: false, msg: "Resource Not found. Please try another filter" })
+        } 
+        // if data found in DB
+        return res.status(200).send({ status: true,status:'Books list', data: savedBlogs })
+        
+        }
+        catch (err) {
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
 
-    
-    
-    
-    
-    
+        }
+
+}
+
+const updateBooks = async function (req, res) {
+    try {
+        // Stores the blog id data recieved in params in to a new variable
+        let bookId = req.params.bookId
+
+        let updateData = await bookModel.findByIdAndUpdate(bookId, {
+        title: req.body.title, 
+        excerpt: req.body.excerpt,
+        releasedAt : req.body.releasedAt,
+        ISBN: req.body.ISBN
+        }, { new: true })
+        return res.status(200).send({ status: true,msg:"Success", data: updateData })
+        
+        }
+        catch (err) {
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+        }
+        }
+
+
+
+let getBooksById=async function(req,res){
+        try{
+        let bookId=req.params.bookId
+        bookId.isDeleted=false
+        //check bookId is valid or not
+        if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
+        //check bookId is present or not in DB
+        let checkBook=await bookModel.findById(bookId)
+        if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
+        //Check reviews
+        let reviewsData=await reviewModel.find({_id:bookId,isDeleted:false})
+        // destructure
+        let { _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted}=checkBook
+        //fetch tha data
+        let data={ _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted, reviewsData}
+        return res.status(200).send({status:true,message:"Books list", data:data})
+        }
+        catch(error){
+        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+
+    }
+}
  
 
-module.exports.createBook = createBook;
-module.exports.updateBook=updateBook;
+
+module.exports.createBook = createBook
+module.exports.getBooks = getBooks
+module.exports.updateBooks = updateBooks
+module.exports.getBooksById = getBooksById
+
+
+
+
+

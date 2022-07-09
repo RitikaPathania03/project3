@@ -12,7 +12,7 @@ const userRegistartion=async function(req,res){
   //check if the data in request body is present or not ?
   if(!Object.keys(userData).length) return res.status(400).send({status:false,message:"Please Enter the Data in Request Body"})
   //check if any unwanted keys present or not
-  if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"Please Enter the Valid Attribute Field "})
+  //if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"Please Enter the Valid Attribute Field "})
   //check  title is present or not
   if(!title) return res.status(400).send({status:false,message:" Please Enter titile"})
   //check  name is present or not
