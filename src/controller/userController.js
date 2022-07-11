@@ -50,6 +50,18 @@ const userRegistartion=async function(req,res){
      let uniqueEmail = await userModel.findOne({ email: email })
      if ( uniqueEmail) return res.status(400).send({ status: false, msg: "E-mail is Already Present in DB" })
      
+    if (address) {
+    //check street,city and pincode is present or not
+    if(!address.street || !address.city || !address.pincode)
+    return res.status(400).send({ status: false, msg:" please enter street,city,pincode"})
+    //check street is valid or not
+    if(!/^[a-zA-Z]+/.test(address.street)) return res.status(400).send({status: false, msg:"strees is invalid"})
+    //check city  is valid or not
+    if(!/^[a-zA-Z]{2,30}$/.test(address.city)) return res.status(400).send({status: false, msg:"city is invalid"})
+     //check pincode  is valid or not
+    if(!/^[1-9][0-9]{5}$/.test(address.pincode)) return res.status(400).send({status: false, msg:"pincode is invalid"})
+    }
+
     // add user in data
     let data = await userModel.create(userData) 
     return res.status(201).send({status:true, message:"success",data:data})

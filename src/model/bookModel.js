@@ -4,15 +4,18 @@ const bookSchema=new mongoose.Schema({
     title:{
         type:String,
         required:true,
+        trim:true
     },
     excerpt:{
         type :String,
-        required:true
+        required:true,
+        trim:true
     },
     ISBN:{
         type:String,
         required:true,
-        unique:true
+        unique:true,
+        trim:true
 
     },
     userId:{

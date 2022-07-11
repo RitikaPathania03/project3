@@ -18,6 +18,8 @@ router.put("/books/:bookId", bookController.updateBooks)
 
  router.get("/books/:bookId",middleware.authentication, bookController.getBooksById)
 
+ router.delete("/books/:bookId" , middleware.authentication  , middleware.authorisation, bookController.deleteBook)
+
 // router.get("/books/:bookId", authenticationMW.authorisation, bookController.getBook)
 
 // router.put("/books/:bookId", authenticationMW.authentication,authorisationMW, bookController.updateBook)

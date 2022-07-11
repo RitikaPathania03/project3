@@ -89,22 +89,18 @@ let getBooks = async function(req,res){
        if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
 
  
-        //check if authorId key is enterd in filter and if its is a valid objectid
         if (("userId" in filterData) && (!ObjectId.isValid(userId))) {
-            return res.status(400).send({ status: false, msg: "Bad Request. UserId invalid" })
+        return res.status(400).send({ status: false, msg: "Bad Request. UserId invalid" })
         }
-        //filterData.isDeleted = false
-        //check user is present or not in DB
+
         let user = await userModel.findById(userId)
         if(!user) return res.status(400).send({ status: false, msg: "User not present in DB" })
 
-        // finding the blog through the enterd condition and newly updated condition
         let savedBlogs = await bookModel.find({filterData,isDeleted:false}).select({_id:1, title:1, excerpt:1, userId:1, category:1, releasedAt:1, reviews:1}) //find return array of object
-        // check if condition entered in the postman/filter doesnot match any document
+
         if (savedBlogs.length == 0) {
         return res.status(404).send({ status: false, msg: "Resource Not found. Please try another filter" })
         } 
-        // if data found in DB
         return res.status(200).send({ status: true,status:'Books list', data: savedBlogs })
         
         }
@@ -136,31 +132,53 @@ const updateBooks = async function (req, res) {
 
 
 
-let getBooksById=async function(req,res){
-        try{
-        let bookId=req.params.bookId
-        bookId.isDeleted=false
-        //check bookId is valid or not
-        if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
-        //check bookId is present or not in DB
-        let checkBook=await bookModel.findById(bookId)
-        if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
-        //Check reviews
-        let reviewsData=await reviewModel.find({_id:bookId,isDeleted:false})
-        // destructure
-        let { _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted}=checkBook
-        //fetch tha data
-        let data={ _id, title, category, subCategory,excerpt, review, updatedAt, releasedAt, isDeleted, reviewsData}
-        return res.status(200).send({status:true,message:"Books list", data:data})
+        let getBooksById=async function(req,res){
+            try{
+            let bookId=req.params.bookId
+            bookId.isDeleted=false
+            //check bookId is valid or not
+            if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
+            //check bookId is present or not in DB
+            let checkBook=await bookModel.findById(bookId)
+            if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
+            //check if the book isDeleted or not
+            if(checkBook.isDeleted==true) return res.status(404).send({ status: false, message:"the book is already deleted"})
+            //Check reviews
+            let reviewsData=await reviewModel.find({bookId:bookId,isDeleted:false}).select({_id:1,bookId:1,reviewedBy:1,reviewedAt:1,review:1,rating:1});
+            
+            let { _id, title, excerpt,userId, category, subCategory, isDeleted, reviews,releasedAt,createdAt, updatedAt }=checkBook
+        
+            //fetch tha data
+            let data={ _id, title,excerpt,userId, category, subCategory,isDeleted, reviews,releasedAt,createdAt, updatedAt, reviewsData}
+            return res.status(200).send({status:true,message:"Books list", data:data})
+            }
+            catch(error){
+                return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+        
+            }
         }
-        catch(error){
+
+const deleteBook=async function(req,res){
+    try{
+    let bookId=req.params.bookId
+    let book=await bookModel.findById(bookId)
+
+    //if(!ObjectId.isValid(book)) return res.status(404).send({ status: false, message:"invalid bookId"})
+    //check if isDeleated Status is True
+    if(book.isDeleted==true)return res.status(404).send({ status: false, message:"the book is already deleted"})
+    //update the status of isDeleted to TRUE
+    let updatedData = await bookModel.findOneAndUpdate({ _id: bookId }, { isDeleted: true }, { new: true });
+    return res.status(200).send({ status: true, msg: "successfuly Deleted" });
+    }
+    catch(error){
         return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
 
     }
+
 }
- 
 
 
+module.exports.deleteBook=deleteBook
 module.exports.createBook = createBook
 module.exports.getBooks = getBooks
 module.exports.updateBooks = updateBooks
