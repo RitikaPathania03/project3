@@ -1,13 +1,73 @@
 const jwt =require("jsonwebtoken");
+const bookModel = require("../model/bookModel");
+const ObjectId = require('mongoose').Types.ObjectId
 
 
+// const authentication = async function (req, res, next) {
+
+//     try {
+//         // check if token key is present in the header/cookies
+//         let token = req.headers["x-api-key"];
+//         // if (!token) token = req.headers["x-api-key"]; //convert key to small case because it will only accept smallcase
+//         if(!token){
+//             return res.status(400).send({ status: false, msg: "Token is Missing" });
+//         }
+        
+//         // Checking if the token is creted using the secret key provided and decode it.
+//         let decodedToken = jwt.verify(token, "group30-radon");
+
+//         if (!decodedToken)
+//             return res.status(401).send({ status: false, msg: "Authentication Missing. Login is required. Token is invalid" }); 
+
+       
+//             next()
+        
+//     }
+//     catch (err) {
+//         res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+//     }
+
+// }
+
+// const authorisation = async function (req, res, next) {
+
+//     try {
+//         let token = req.headers["x-api-key"];
+//         if(!token){
+//             return res.status(400).send({ status: false, msg: "Token is Missing" });
+//         }
+//         let decodedToken = jwt.verify(token, "group30-radon");
+        
+//         if (!decodedToken)return res.status(401).send({ status: false, msg: "Authentication Missing. Login is required. Token is invalid" }); 
+
+//         if (!ObjectId.isValid(bookId)) {
+//                         return res.status(400).send({ status: false, msg: "BookId in url: is Invalid" });
+//                  }
+//         //checking authorId
+//         let bookId=req.params.bookId;
+//         let findBookId = await bookModel.findById({_id:bookId})
+//         if(!findBookId) return res.status(404).send({status:false, message :"This book does not exist"})
+        
+        
+//         const findBook=await bookModel.findById({_id:bookId})
+//         let modifyAuthor = findBook.userId;
+//         let loggedUser = decodedToken.userId;
+//         console.log(modifyAuthor)
+//         console.log(loggedUser) 
+//         if (modifyAuthor!= loggedUser) {
+//         return res.status(401).send({ status: false, msg: "Modifying Author must be logged-in user" });
+//         }
+//         next();
+//         }catch (error) {
+//         res.status(500).send(error.message);
+//         }
+//         };
 
 const authentication = async function (req, res, next) {
 
     try {
         // check if token key is present in the header/cookies
         let token = req.headers["x-api-key"];
-        // if (!token) token = req.headers["x-api-key"]; //convert key to small case because it will only accept smallcase
         if(!token){
             return res.status(400).send({ status: false, msg: "Token is Missing" });
         }
@@ -31,17 +91,55 @@ const authentication = async function (req, res, next) {
 const authorisation = async function (req, res, next) {
 
     try {
-        // check if token key is present in the header/cookies
-        let token = req.headers["x-Api-key"];
-        if (!token) token = req.headers["x-api-key"]; //convert key to small case because it will only accept smallcase
 
-        // Checking if the token is creted using the secret key provided and decode it.
+        let token = req.headers["x-api-key"];
+        if(!token){
+            return res.status(400).send({ status: false, msg: "Token is Missing" });
+        }
         let decodedToken = jwt.verify(token, "group30-radon");
 
-        if (!decodedToken)
-            return res.status(401).send({ status: false, msg: "Authentication Missing. Login is required. Token is invalid" });
+        if (!decodedToken) return res.status(401).send({ status: false, msg: "Authentication Missing. Login is required. Token is invalid" }); 
 
-        next()
+          // execute if req.body will contain userID (When new Book is Created)
+          if (req.body.userId) {
+            //console.log(req.body.userId)
+            if (decodedToken.userId != (req.body.userId)) {
+                return res.status(400).send({ status: false, msg: "token userid and req.body id is not matched" })
+            }
+            return next()
+        }
+        // executes when we need to fetch the userId from bookID (when UPADTE API CAlls)
+        if (req.params.bookId) {
+            let bookId = req.params.bookId
+            //check the user Id is Valid or Not ?
+            if (!ObjectId.isValid(bookId)) {
+                return res.status(400).send({ status: false, msg: "BookId in url: is Invalid" });
+            }
+            // let userData = await bookModel.findById({_id:bookId}).select("userId")
+    
+            // // if(!userData){
+            // //     return res.status(400).send({ status: false, msg: "Book Id is Invalid" });
+            // // }
+            
+            // if (decodedToken.userId != userData.userId) {
+            //     return res.status(400).send({ status: false, msg: "token user id and req.body id is not matched" })
+            // }
+            // return 
+            next()
+        }
+        //executes when we need userID from query params, (when UPDATE with Query Param filter)
+        if (req.query.userId ) {
+            if (decodedToken.userId != (req.query.userId)) {
+                return res.status(400).send({ status: false, msg: "token userid and req.query id is not matched" })
+            }
+            return next()
+        }
+        
+        //if no Author Id is Found from client Api ,Side
+        else {
+            return res.status(400).send({ status: false, mg: " user id Must be Present ......." })
+        }
+        
     }
 
     catch (err) {

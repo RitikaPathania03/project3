@@ -4,6 +4,7 @@ const userModel = require("../model/userModel")
 const ObjectId = require('mongoose').Types.ObjectId
 const moment = require('moment')
 const reviewModel = require("../model/reviewModel")
+const { findOne } = require("../model/reviewModel")
 
 const isValid = function (value) {
     if ( value === "undefined" || value === null) return false
@@ -110,19 +111,46 @@ let getBooks = async function(req,res){
         }
 
 }
-
 const updateBooks = async function (req, res) {
     try {
-        // Stores the blog id data recieved in params in to a new variable
-        let bookId = req.params.bookId
+            // Stores the blog id data recieved in params in to a new variable
+        let enteredBookId = req.params.bookId
+        let data = req.body
+        let {title,excerpt,releasedAt,ISBN,isDeleted,...rest} = data
+            
 
-        let updateData = await bookModel.findByIdAndUpdate(bookId, {
-        title: req.body.title, 
-        excerpt: req.body.excerpt,
-        releasedAt : req.body.releasedAt,
-        ISBN: req.body.ISBN
+            //check if body is empty or not
+        if(!Object.keys(data).length) return res.status(400).send({status:false, message:"provide some data in param"})
+
+            //check if any unwanted keys is present or not
+        if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
+
+            
+        if(title && (!isValid(data.title)) )return res.status(400).send({status: false, message: "Please Enter valid title"})
+    
+        if(excerpt &&(!isValid(data.excerpt)) )return res.status(400).send({status: false, message: "Please Enter valid excerpt"})
+
+        if(ISBN){
+                if(!/^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/.test(data.ISBN))res.status(400).send({status:false,msg:"enter valid ISBN"})  }
+
+        if(releasedAt && (!isValid(data.releasedAt)))return res.status(400).send({status: false, message: "Please Enter valid releasedAt"})
+
+        let checkBookId = await bookModel.findById({enteredBookId})
+        if(!checkBookId) return res.status(404).send({status:false, message :"This book does not exist"})
+        if(Object.keys(checkBookId)==null)return res.status(404).send({status:false,msg:"user book data is empty in db"})
+            
+        if(checkBookId.isDeleted) 
+        return res.status(404).send({status:false, message : "This Book is already Deleted"})
+
+        let checkISBN = await bookModel.findOne({ISBN : ISBN})
+        if(checkISBN) return res.status(400).send({status:false, message: "This ISBN already exist"})
+        console.log(checkISBN)
+            
+
+        let updateData = await bookModel.findByIdAndUpdate(enteredBookId, {  
+        title,excerpt,releasedAt,ISBN
         }, { new: true })
-        return res.status(200).send({ status: true,msg:"Success", data: updateData })
+        return res.status(200).send({ status: true, data: updateData })
         
         }
         catch (err) {
@@ -130,33 +158,52 @@ const updateBooks = async function (req, res) {
         }
         }
 
+// const updateBooks = async function (req, res) {
+//     try {
+//         // Stores the blog id data recieved in params in to a new variable
+//         let bookId = req.params.bookId
+
+//         let updateData = await bookModel.findByIdAndUpdate(bookId, {
+//         title: req.body.title, 
+//         excerpt: req.body.excerpt,
+//         releasedAt : req.body.releasedAt,
+//         ISBN: req.body.ISBN
+//         }, { new: true })
+//         return res.status(200).send({ status: true,msg:"Success", data: updateData })
+        
+//         }
+//         catch (err) {
+//         return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+//         }
+//         }
 
 
-        let getBooksById=async function(req,res){
-            try{
-            let bookId=req.params.bookId
-            bookId.isDeleted=false
+
+    let getBooksById=async function(req,res){
+    try{
+    let bookId=req.params.bookId
+    bookId.isDeleted=false
             //check bookId is valid or not
-            if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
+    if(!ObjectId.isValid(bookId)) return  res.status(400).send({ status: false, message:"invalid bookid"})
             //check bookId is present or not in DB
-            let checkBook=await bookModel.findById(bookId)
-            if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
+    let checkBook=await bookModel.findById(bookId)
+    if(!checkBook)return  res.status(404).send({ status: false, message:"book is not present in DB"})
             //check if the book isDeleted or not
-            if(checkBook.isDeleted==true) return res.status(404).send({ status: false, message:"the book is already deleted"})
+    if(checkBook.isDeleted==true) return res.status(404).send({ status: false, message:"the book is already deleted"})
             //Check reviews
-            let reviewsData=await reviewModel.find({bookId:bookId,isDeleted:false}).select({_id:1,bookId:1,reviewedBy:1,reviewedAt:1,review:1,rating:1});
+    let reviewsData=await reviewModel.find({bookId:bookId,isDeleted:false}).select({_id:1,bookId:1,reviewedBy:1,reviewedAt:1,review:1,rating:1});
             
-            let { _id, title, excerpt,userId, category, subCategory, isDeleted, reviews,releasedAt,createdAt, updatedAt }=checkBook
+    let { _id, title, excerpt,userId, category, subCategory, isDeleted, reviews,releasedAt,createdAt, updatedAt }=checkBook
         
             //fetch tha data
-            let data={ _id, title,excerpt,userId, category, subCategory,isDeleted, reviews,releasedAt,createdAt, updatedAt, reviewsData}
-            return res.status(200).send({status:true,message:"Books list", data:data})
-            }
-            catch(error){
-                return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+    let data={ _id, title,excerpt,userId, category, subCategory,isDeleted, reviews,releasedAt,createdAt, updatedAt, reviewsData}
+    return res.status(200).send({status:true,message:"Books list", data:data})
+    }
+    catch(error){
+    return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
         
-            }
-        }
+    }
+    }
 
 const deleteBook=async function(req,res){
     try{
@@ -171,7 +218,7 @@ const deleteBook=async function(req,res){
     return res.status(200).send({ status: true, msg: "successfuly Deleted" });
     }
     catch(error){
-        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+    return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
 
     }
 

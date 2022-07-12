@@ -13,8 +13,9 @@ const isValid = function (value) {
 
 const reviews=async function (req,res){
     try{
-    let bookId=req.params.bookId
-    let reviewsData=req.body
+    let bookId=req.params.bookId;
+    if(!bookId) return res.status(400).send({status:false, message:"please enter bookId in params"})
+    let reviewsData=req.body;
     let {reviewedBy, rating, review, ...rest}=req.body
     //check body is empty or not
     if(!Object.keys(reviewsData).length) return res.status(400).send({status:false,message:"Please Enter the Data in Request Body"})
@@ -22,9 +23,7 @@ const reviews=async function (req,res){
     if(Object.keys(rest).length > 0) return res.status(400).send({status:false,message:"Please Enter the Valid Attribute Field "})
     //check if bookid is present or not ie req.body
     if(!reviewedBy) return res.status(400).send({status:false, message:"please enter reviewedBy"})//ask to TA if it is mendetory or not
-    //check if reviewedBy is present or not ie req.body
-    if(!bookId) return res.status(400).send({status:false, message:"please enter bookId in params"})
-   
+    //check if reviewedBy is present or not ie req.body   
     if(!rating) return res.status(400).send({status:false, message:"please enter rating"})
 
    // if (typeof rating !== Number) { res.status(400).send({ msg: 'rating should be number type' }) }
@@ -34,7 +33,7 @@ const reviews=async function (req,res){
     if (!ObjectId.isValid(bookId)) return res.status(400).send({ status: false, msg: "bookId is Invalid" });
     //check  reviewedBy is valid or not
     // let regName=/^[a-zA-Z]$/
-    if(!/^[a-zA-Z]{2,30}$/.test(reviewedBy)) return res.status(400).send({ status: false, msg: "reviewedBy is Invalid" });
+    if(!/^[a-zA-Z\s]*$/.test(reviewedBy)) return res.status(400).send({ status: false, msg: "reviewedBy is Invalid" });
     //check  rating is valid or not
     if(!/^[1-5]$/.test(rating)) return res.status(400).send({ status: false, msg: "rating is Invalid" });
     // check  review is valid or not
@@ -78,74 +77,79 @@ const reviews=async function (req,res){
 const updateReview = async function (req, res) {
     try {
         // Stores the blog id data recieved in params in to a new variable
-        let bookId = req.params.bookId;
-        let reviewId=req.params.reviewId;
-        let newData=req.body;
-        let {reviewedBy, rating, review, ...rest }=newData;
+    let bookId = req.params.bookId;
+    if(!Object.keys(bookId).length) return res.status(400).send({status:false,message:"Please Enter some bookId in params"})
 
-        if(!Object.keys(bookId).length) return res.status(400).send({status:false,message:"Please Enter some bookId in params"})
-        if(!Object.keys(reviewId).length) return res.status(400).send({status:false,message:"Please Enter some reviewId in params"})
-        if(!Object.keys(req.body).length) return res.status(400).send({status:false,message:"Please Enter the Data in Request Body"})
-        if(!Object.keys(req.params).length) return res.status(400).send({status:false,message:"Please Enter the Data in params"})
-        if(reviewedBy){if(!/^[a-zA-Z]+/.test(reviewedBy))  return res.status(400).send({ status: false, msg: "reviewBy should be in alphabets" })};
-        if(review){if(!/^[a-zA-Z]+/.test(review))  return res.status(400).send({ status: false, msg: "review should be in letters" })};
-        if(rating){if(!/^[1-5]$/.test(rating)) return res.status(400).send({ status: false, msg: "rating should be between 1 and 5" })};
-        if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"Only reviewedBy or rating or review can be updated"})
+    let reviewId=req.params.reviewId;
+    let newData=req.body;
+    let {reviewedBy, rating, review, ...rest }=newData;
 
-        let findBook=await bookModel.findOne({_id:bookId, isDeleted:false});
-        if(!findBook){res.status(400).send({status:false,msg:"No such book exists or is deleted"})}
-        let findReview=await reviewModel.findOne({_id:reviewId, isDeleted:false});
-        if(!findReview){res.status(400).send({status:false,msg:"No such review exists or is deleted"})}
+   // if(!Object.keys(bookId).length) return res.status(400).send({status:false,message:"Please Enter some bookId in params"})
+    if(!Object.keys(reviewId).length) return res.status(400).send({status:false,message:"Please Enter some reviewId in params"})
+    if(!Object.keys(req.body).length) return res.status(400).send({status:false,message:"Please Enter the Data in Request Body"})
+    if(!Object.keys(req.params).length) return res.status(400).send({status:false,message:"Please Enter the Data in params"})
+    if(reviewedBy){if(!/^[a-zA-Z\s]*$/.test(reviewedBy))  return res.status(400).send({ status: false, msg: "reviewBy should be in alphabets" })};
+    if(review){if(!/^[a-zA-Z]+/.test(review))  return res.status(400).send({ status: false, msg: "review should be in letters" })};
+    if(rating){if(!/^[1-5]$/.test(rating)) return res.status(400).send({ status: false, msg: "rating should be between 1 and 5" })};
+    if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"Only reviewedBy or rating or review can be updated"})
+
+    let findBook=await bookModel.findOne({_id:bookId, isDeleted:false});
+    if(!findBook){res.status(400).send({status:false,msg:"No such book exists or is deleted"})}
+    let findReview=await reviewModel.findOne({_id:reviewId, isDeleted:false});
+    if(!findReview){res.status(400).send({status:false,msg:"No such review exists or is deleted"})}
         
-        if(findReview.bookId!=bookId){ res.status(400).send({status:false,msg:"the review doesnt belong to this book or vice versa,change the given id"})}
+    if(findReview.bookId!=bookId){ res.status(400).send({status:false,msg:"the review doesnt belong to this book or vice versa,change the given id"})}
              
-        let updateData = await reviewModel.findByIdAndUpdate(reviewId, {
-        review: review, 
-        rating: rating,
-        reviewedBy :reviewedBy,
+    let updateData = await reviewModel.findByIdAndUpdate(reviewId, {
+    review: review, 
+    rating: rating,
+    reviewedBy :reviewedBy,
        
-        }, { new: true })
-        return res.status(200).send({ status: true,msg:"Success", data: updateData })
+    }, { new: true })
+    return res.status(200).send({ status: true,msg:"Success", data: updateData })
         
-        }
-        catch (err) {
-        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
-        }
-        }
+    }
+    catch (err) {
+    return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: err.message })
+    }
+    };
 
 
-    const deleteReview=async function(req,res){
-        try{
-        let bookId=req.params.bookId
-        let reviewId = req.params.reviewId
-        let book=await bookModel.findById(bookId)
+const deleteReview=async function(req,res){
+    try{
+    if(!Object.keys(req.params).length) return res.status(400).send({status:false,message:"Please Enter the Data in params"})
+    let bookId=req.params.bookId;
+    if(!Object.keys(bookId).length) return res.status(400).send({status:false,message:"Please Enter some bookId in params"})
+    let reviewId = req.params.reviewId
+    if(!Object.keys(reviewId).length) return res.status(400).send({status:false,message:"Please Enter some bookId in params"})
+    let book=await bookModel.findById(bookId)
         
-        if(!book) return res.status(400).send({status:false, message:"Book is not present in DB"})
+    if(!book) return res.status(400).send({status:false, message:"Book is not present in DB"})
         
-        if(book.isDeleted==true)return res.status(404).send({ status: false, message:"the book is already deleted"})
+    if(book.isDeleted==true)return res.status(404).send({ status: false, message:"the book is already deleted"})
         
-        let review=await reviewModel.findById(reviewId)
+    let review=await reviewModel.findById(reviewId)
           
         
-        if(!review) return res.status(400).send({status:false, message:"No review found for this book"})
+    if(!review) return res.status(400).send({status:false, message:"No review found for this book"})
         
-        if(review.isDeleted==true)return res.status(404).send({ status: false, message:"This review is Deleted."})
+    if(review.isDeleted==true)return res.status(404).send({ status: false, message:"This review is Deleted."})
         
-        if(review.bookId != bookId) return res.status(400).send({status:false, message : "the review doesnt belong to this book or vice versa,change the given id"})
+    if(review.bookId != bookId) return res.status(400).send({status:false, message : "the review doesnt belong to this book or vice versa,change the given id"})
            
             //update the status of isDeleted to TRUE
-        let updatedData = await reviewModel.findOneAndUpdate({ _id: reviewId }, {isDeleted:true }, { new: true });
-        book.reviews--;
-        await book.save();
+    let updatedData = await reviewModel.findOneAndUpdate({ _id: reviewId }, {isDeleted:true }, { new: true });
+    book.reviews--;
+    await book.save();
         
-        return res.status(200).send({ status: true, msg: "Successfuly Deleted" });  
-        }
-        catch(error){
-        return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
+    return res.status(200).send({ status: true, msg: "Successfuly Deleted" });  
+    }
+    catch(error){
+    return res.status(500).send({ msg: "Serverside Errors. Please try again later", error: error.message })
         
-        }
+    }
         
-        }
+    };
    
 module.exports.reviews=reviews;
 module.exports.updateReview=updateReview;
