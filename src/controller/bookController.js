@@ -126,7 +126,7 @@ const updateBooks = async function (req, res) {
         if(Object.keys(rest).length > 0) return res.status(400).send({status:false, message:"please provide valid attribute"})
 
             
-        if(title && (!isValid(data.title)) )return res.status(400).send({status: false, message: "Please Enter valid title"})
+               if(title && (!isValid(data.title)) )return res.status(400).send({status: false, message: "Please Enter valid title"})
     
         if(excerpt &&(!isValid(data.excerpt)) )return res.status(400).send({status: false, message: "Please Enter valid excerpt"})
 
